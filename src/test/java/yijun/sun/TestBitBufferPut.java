@@ -117,6 +117,17 @@ public class TestBitBufferPut {
         assertThat(buffer.remainingBits()).isEqualTo(12);
         assertThat(buffer.getByte(8)).isEqualTo((byte)213);//11010101
         assertThat(buffer.getByte(4)).isEqualTo((byte)9);//1001
+
+        buffer = BitBuffer.allocate(12);
+        //110
+        buffer.put((byte)6, 3);
+        //0001010
+        buffer.put((byte)10, 7);
+        assertThat(buffer.remainingBits()).isEqualTo(2);
+        buffer.flip();
+        assertThat(buffer.remainingBits()).isEqualTo(10);
+        assertThat(buffer.getByte()).isEqualTo((byte)194);//11000010
+        assertThat(buffer.getByte(2)).isEqualTo((byte)2);//10
     }
 
     @Test

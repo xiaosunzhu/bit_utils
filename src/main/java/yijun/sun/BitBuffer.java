@@ -319,7 +319,7 @@ public class BitBuffer {
         if(secondPartBitLength > 0) {
             secondPartBits = pickBitsFromRightPartOfByte(data, secondPartBitLength);
             firstPartBitLength = 8 - positionInByte;
-            firstPartBits = pickBitsFromLeftPartOfByte(data, firstPartBitLength);
+            firstPartBits = pickBitsPartOfByte(data, 8 - bitLength, firstPartBitLength);
         } else {
             firstPartBits = pickBitsFromRightPartOfByte(data, bitLength);
         }
@@ -386,7 +386,7 @@ public class BitBuffer {
         if(secondPartBitLength > 0) {
             secondPartBits = pickBitsFromRightPartOfByte(data, secondPartBitLength);
             firstPartBitLength = 8 - positionInByte;
-            firstPartBits = pickBitsFromLeftPartOfByte(data, firstPartBitLength);
+            firstPartBits = pickBitsPartOfByte(data, 8 - bitLength, firstPartBitLength);
         } else {
             firstPartBits = pickBitsFromRightPartOfByte(data, bitLength);
         }
@@ -581,8 +581,14 @@ public class BitBuffer {
     }
 
     private byte pickBitsFromLeftPartOfByte(byte data, int bitLength) {
-        return (byte)((data & getCoverToPickBitsInByteLeft(bitLength)) >>>
-                (8 - bitLength));
+        return (byte)((data & getCoverToPickBitsInByteLeft(bitLength) &
+                0xff) >>> (8 - bitLength));
+    }
+
+    private byte pickBitsPartOfByte(byte data, int fromBit, int bitLength) {
+        byte cover = getCoverToPickBitsInByteLeft(bitLength);
+        cover = (byte)((cover & 0xff) >>> fromBit);
+        return (byte)((data & cover & 0xff) >>> (8 - bitLength - fromBit));
     }
 
     private byte getCoverToPickBitsInByteRight(int bitLength) {
