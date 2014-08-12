@@ -1,0 +1,9 @@
+Version List:
+
+
+1.0-SNAPSHOT
+Create base simple bit utils include BitBuffer and Bin StringHelper.
+
+
+1.0
+Add array/getUsedArray, put int/short functions to BitBuffer.

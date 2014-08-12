@@ -1,7 +1,25 @@
+/*
+ * Copyright 2014 SunYiJun
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package yijun.sun;
 
 
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 
 /**
@@ -19,6 +37,8 @@ public class BitBuffer {
 
     private int voidBitsInLastByte;
 
+    private int bitTotalLength;
+
     private BitBuffer() {
     }
 
@@ -31,6 +51,7 @@ public class BitBuffer {
             throw new IllegalArgumentException("bytesData should not be null or empty.");
         }
         bitBuffer.buffer = ByteBuffer.wrap(bytesData);
+        bitBuffer.bitTotalLength = bytesData.length << 3;
         return bitBuffer;
     }
 
@@ -48,6 +69,7 @@ public class BitBuffer {
         bitBuffer.buffer = ByteBuffer.allocate(byteLength);
         int temp = bitLength & 0x07;
         bitBuffer.voidBitsInLastByte = 8 - (temp == 0 ? 8 : temp);
+        bitBuffer.bitTotalLength = bitLength;
         return bitBuffer;
     }
 
@@ -74,7 +96,7 @@ public class BitBuffer {
     /**
      * Get one byte(8 bits) from beginning.
      *
-     * @throws IndexOutOfBoundsException have not enough bit to get.
+     * @throws BufferOverflowException have not enough bit to get.
      */
     public byte getByte() {
         return getByte(8);
@@ -87,10 +109,10 @@ public class BitBuffer {
      * buffer like "10010101 01110001", you can get 16 bits totally. First,
      * you get 5 bits, will return a byte equals 18("00010010"). Then you get
      * 8 bits, will return a byte equals 174("10101110"). Now remain bit count is 3,
-     * so if you get 4 bits, will throw IndexOutOfBoundsException.
+     * so if you get 4 bits, will throw BufferOverflowException.
      *
-     * @throws IllegalArgumentException  bitLength can't lager than 8 or be negative.
-     * @throws IndexOutOfBoundsException have not enough bit to get.
+     * @throws IllegalArgumentException bitLength can't lager than 8 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
      */
     public byte getByte(int bitLength) {
         if(bitLength > 8) {
@@ -104,7 +126,7 @@ public class BitBuffer {
             return 0;
         }
         if(remainingBits() < bitLength) {
-            throw new IndexOutOfBoundsException();
+            throw new BufferOverflowException();
         }
         int endIndex = positionInByte + bitLength;
         Byte secondPart = null;
@@ -137,8 +159,8 @@ public class BitBuffer {
      * buffer like "10010101 01110001".
      * If startBitIndex is 2, bitLength is 8, will return a byte equals 85("01010101").
      *
-     * @throws IllegalArgumentException  bitLength can't lager than 8 or be negative.
-     * @throws IndexOutOfBoundsException have not enough bit to get.
+     * @throws IllegalArgumentException bitLength can't lager than 8 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
      */
     public byte getByte(int startBitIndex, int bitLength) {
         if(bitLength > 8) {
@@ -152,7 +174,7 @@ public class BitBuffer {
             return 0;
         }
         if(remainingBits() < bitLength) {
-            throw new IndexOutOfBoundsException();
+            throw new BufferOverflowException();
         }
         int startByte = startBitIndex >>> 3;
         int positionInByte = startBitIndex & 0x07;
@@ -181,8 +203,8 @@ public class BitBuffer {
      * If startBitIndex is 2, bitLength is 14, will return 2 bytes,
      * equals {85,49}, ("01010101 00110001").
      *
-     * @throws IllegalArgumentException  bitLength can't lager than 8 or be negative.
-     * @throws IndexOutOfBoundsException have not enough bit to get.
+     * @throws IllegalArgumentException bitLength can't lager than 8 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
      */
     public byte[] getBytes(int startBitIndex, int bitLength) {
         if(bitLength < 0) {
@@ -198,7 +220,7 @@ public class BitBuffer {
             return bytes;
         }
         if(remainingBits() < bitLength) {
-            throw new IndexOutOfBoundsException();
+            throw new BufferOverflowException();
         }
 
         int bitLengthInFirstByte = (bitLength & 0x07) == 0 ? 8 : (bitLength & 0x07);
@@ -220,8 +242,8 @@ public class BitBuffer {
      * If bitLength is 14, will return 2 bytes,
      * equals {149,28}, ("10010101 00011100").
      *
-     * @throws IllegalArgumentException  bitLength can't lager than 8 or be negative.
-     * @throws IndexOutOfBoundsException have not enough bit to get.
+     * @throws IllegalArgumentException bitLength can't lager than 8 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
      */
     public byte[] getBytes(int bitLength) {
         if(bitLength < 0) {
@@ -251,7 +273,7 @@ public class BitBuffer {
      * Put one byte into buffer.
      *
      * @return Current buffer.
-     * @throws IndexOutOfBoundsException have not enough bit to get.
+     * @throws BufferOverflowException have not enough bit to get.
      */
     public BitBuffer put(byte data) {
         return put(data, 8);
@@ -270,11 +292,11 @@ public class BitBuffer {
      * if bitLength=3, will put 110, first byte is "11011000".
      * if bitLength=8, will put 00000110, 2 bytes is "11000000 11000000".
      * But if buffer bits capacity is 11, current bit count is 11, if you put
-     * another data, will throw IndexOutOfBoundsException.
+     * another data, will throw BufferOverflowException.
      *
      * @return Current buffer.
-     * @throws IllegalArgumentException  bitLength can't lager than 8 or be negative.
-     * @throws IndexOutOfBoundsException have not enough bit to get.
+     * @throws IllegalArgumentException bitLength can't lager than 8 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
      */
     public BitBuffer put(byte data, int bitLength) {
         if(bitLength > 8) {
@@ -288,7 +310,7 @@ public class BitBuffer {
             return this;
         }
         if(buffer.remaining() == 0 || remainingBits() < bitLength) {
-            throw new IndexOutOfBoundsException();
+            throw new BufferOverflowException();
         }
         byte firstPartBits;
         int firstPartBitLength = bitLength;
@@ -337,8 +359,8 @@ public class BitBuffer {
      * if bitLength=3, will put 110, first byte is "11011000".
      *
      * @return Current buffer.
-     * @throws IllegalArgumentException  bitLength can't lager than 8 or be negative.
-     * @throws IndexOutOfBoundsException have not enough bit to get.
+     * @throws IllegalArgumentException bitLength can't lager than 8 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
      */
     public BitBuffer put(byte data, int putBitPosition, int bitLength) {
         if(bitLength > 8) {
@@ -355,7 +377,7 @@ public class BitBuffer {
         int positionInByte = putBitPosition & 0x07;
         if(buffer.limit() <= currentBytePosition ||
                 remainingBits(putBitPosition) < bitLength) {
-            throw new IndexOutOfBoundsException();
+            throw new BufferOverflowException();
         }
         byte firstPartBits;
         int firstPartBitLength = bitLength;
@@ -392,19 +414,20 @@ public class BitBuffer {
      * Put bits with byte array into buffer.
      *
      * @return Current buffer.
-     * @throws IndexOutOfBoundsException have not enough bit to get.
+     * @throws BufferOverflowException have not enough bit to get.
      */
     public BitBuffer put(byte[] data) {
         return put(data, data.length << 3);
     }
 
     /**
-     * Put fixed bit count into buffer. Because of put bytes,
+     * Put fixed bit count into buffer, from byte left(11111111 11000000 count 10
+     * will use 11111111 11, not 11110000 00). Because of put bytes,
      * so bitLength can't larger than 8*data.length or be negative.
      *
      * @return Current buffer.
-     * @throws IllegalArgumentException  bitLength can't lager than 8 or be negative.
-     * @throws IndexOutOfBoundsException have not enough bit to get.
+     * @throws IllegalArgumentException bitLength can't lager than 8 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
      */
     public BitBuffer put(byte[] data, int bitLength) {
         if(bitLength > data.length << 3) {
@@ -419,7 +442,7 @@ public class BitBuffer {
             return this;
         }
         if(buffer.remaining() == 0 || remainingBits() < bitLength) {
-            throw new IndexOutOfBoundsException();
+            throw new BufferOverflowException();
         }
         int fullUsedByteLength = bitLength >>> 3;
         int lastByteUsedBitLength = bitLength & 0x07;
@@ -435,13 +458,14 @@ public class BitBuffer {
     }
 
     /**
-     * Put fixed bit count into buffer, start put position is putBitPosition.
+     * Put fixed bit count into buffer, from byte left(11111111 11000000 count 10
+     * will use 11111111 11, not 11110000 00), start put position is putBitPosition.
      * Because of put bytes, so bitLength can't larger than 8*data.length or be negative.
      * This will not change position.
      *
      * @return Current buffer.
-     * @throws IllegalArgumentException  bitLength can't lager than 8 or be negative.
-     * @throws IndexOutOfBoundsException have not enough bit to get.
+     * @throws IllegalArgumentException bitLength can't lager than 8 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
      */
     public BitBuffer put(byte[] data, int putBitPosition, int bitLength) {
         if(bitLength > data.length << 3) {
@@ -460,7 +484,7 @@ public class BitBuffer {
         }
         int bytePosition = putBitPosition >>> 3;
         if(buffer.limit() <= bytePosition || remainingBits(putBitPosition) < bitLength) {
-            throw new IndexOutOfBoundsException();
+            throw new BufferOverflowException();
         }
         int fullUsedByteLength = bitLength >>> 3;
         int lastByteUsedBitLength = bitLength & 0x07;
@@ -474,6 +498,76 @@ public class BitBuffer {
             put(bitsInLastByte, putBitPosition, lastByteUsedBitLength);
         }
         return this;
+    }
+
+    /**
+     * Put fixed bit count of integer into buffer, from int right
+     * (00000000 00000000 00000000 11000000 count 8 will use 11000000, not 00000000).
+     * Because of put bytes, so bitLength can't larger than 8*data.length or be negative.
+     *
+     * @return Current buffer.
+     * @throws IllegalArgumentException bitLength can't lager than 8 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
+     */
+    public BitBuffer put(int data, int bitLength) {
+        int changedData = data << (32 - bitLength);
+        byte[] dataBytes = NumberHelper.to4Bytes(changedData);
+        return put(dataBytes, bitLength);
+    }
+
+    /**
+     * Put fixed bit count of short integer into buffer, from right
+     * (00000000 11000000 count 8 will use 11000000, not 00000000).
+     * Because of put bytes, so bitLength can't larger than 8*data.length or be negative.
+     *
+     * @return Current buffer.
+     * @throws IllegalArgumentException bitLength can't lager than 8 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
+     */
+    public BitBuffer put(short data, int bitLength) {
+        short changedData = (short)(data << (16 - bitLength));
+        byte[] dataBytes = NumberHelper.to2Bytes(changedData);
+        return put(dataBytes, bitLength);
+    }
+
+    /**
+     * Returns the byte array that backs this buffer.
+     * <p/>
+     * Example:<br/>
+     * A buffer capacity is 14, filled bits are 11111111 111111,
+     * will return byte[2] : 11111111 11111100.
+     */
+    public byte[] array() {
+        int byteCount = bitTotalLength >>> 3;
+        int bitsInLastByte = bitTotalLength & 0x07;
+        byte[] allBytes = buffer.array();
+        if(bitsInLastByte == 0) {
+            allBytes = Arrays.copyOfRange(allBytes, 0, byteCount);
+        } else {
+            allBytes = Arrays.copyOfRange(allBytes, 0, byteCount + 1);
+            allBytes[allBytes.length - 1] = (byte)(allBytes[allBytes.length - 1] &
+                    getCoverToPickBitsInByteLeft(bitsInLastByte));
+        }
+        return allBytes;
+    }
+
+    /**
+     * Returns the byte array that used in this buffer.
+     * Means from 0 to position.
+     * <p/>
+     * Example:<br/>
+     * A buffer capacity is 14, put(or get) 10 bits are 11111111 11,
+     * will return byte[2] : 11111111 11000000.
+     */
+    public byte[] getUsedArray() {
+        int bytePosition = buffer.position();
+        if(positionInByte == 0) {
+            return Arrays.copyOfRange(buffer.array(), 0, bytePosition);
+        }
+        byte[] usedArray = Arrays.copyOfRange(buffer.array(), 0, bytePosition + 1);
+        usedArray[usedArray.length - 1] = (byte)(usedArray[usedArray.length - 1] &
+                getCoverToPickBitsInByteLeft(positionInByte));
+        return usedArray;
     }
 
     private int remainingBits(int fromBitPosition) {

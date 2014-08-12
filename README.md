@@ -2,7 +2,7 @@ bit_utils
 =========
 
 Utils for binary operation.
-Main contians two utils: BitBuffer and BinStringHelper.
+Main contains two utils: BitBuffer and BinStringHelper.
 
 -------------------------------------------------------
 ### BitBuffer ###
@@ -10,7 +10,7 @@ A buffer wrapped *java.nio.ByteBuffer*, provide operate a buffer in bit unit.
 Functions like ByteBuffer.
 
 *   You can use wrap a byte array to create BitBuffer. Then you can get some bits from it.
-    Simplely like below:
+    Simplified usage like below:
 
         byte[] data = { (byte)210, 50 }; // 11010010  00110010
         BitBuffer buffer = BitBuffer.wrapBytes(data);
@@ -31,7 +31,7 @@ Functions like ByteBuffer.
         // This bits is {210, 3}
 
 *   You can use allocate fix capacity to create empty BitBuffer. Then you can put some bits in it.
-    Simplely like below:
+    Simplified usage like below:
     
         byte data = (byte)9; // 1001
         BitBuffer buffer = BitBuffer.allocate(20);
@@ -58,7 +58,7 @@ More usage in doc and test.
 -------------------------------------------------------
 ### BinStringHelper ###
 A simple tool, provide some static function to change number(byte,byte[],int,short,long) to a binary string.
-Uarually used to print for debug.
+Usually used to print for debug.
 
 Example: 
 

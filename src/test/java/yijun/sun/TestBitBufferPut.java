@@ -1,7 +1,25 @@
+/*
+ * Copyright 2014 SunYiJun
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package yijun.sun;
 
 
 import org.junit.Test;
+
+import java.nio.BufferOverflowException;
 
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.fest.assertions.api.Assertions.fail;
@@ -38,8 +56,20 @@ public class TestBitBufferPut {
         try {
             buffer.put((byte)1, 8);
             fail("Out of bounds must throw exception.");
-        } catch(IndexOutOfBoundsException e) {
+        } catch(BufferOverflowException e) {
         }
+    }
+
+    @Test
+    public void test_put_bit_truncate_byte_len2_in_one_byte() {
+        //1001
+        byte data = 9;
+        BitBuffer buffer = BitBuffer.allocate(14);
+        buffer.put(data, 2);
+        buffer.put(data, 8);//01000010 01
+        buffer.flip();
+        assertThat(buffer.getByte()).isEqualTo((byte)66);
+        assertThat(buffer.getByte(2)).isEqualTo((byte)1);
     }
 
     @Test
@@ -54,7 +84,7 @@ public class TestBitBufferPut {
         try {
             buffer.getByte(1);
             fail("Out of bounds must throw exception.");
-        } catch(IndexOutOfBoundsException e) {
+        } catch(BufferOverflowException e) {
         }
 
         //0010
@@ -151,7 +181,7 @@ public class TestBitBufferPut {
         try {
             buffer.put(data, 1, 2);
             fail("Out of bounds must throw exception.");
-        } catch(IndexOutOfBoundsException e) {
+        } catch(BufferOverflowException e) {
         }
     }
 
@@ -176,12 +206,74 @@ public class TestBitBufferPut {
         assertThat(buffer.remainingBits()).isEqualTo(0);
         try {
             buffer.put(data, 1, 16);//00000100 11001110
-        } catch(IndexOutOfBoundsException e) {
+        } catch(BufferOverflowException e) {
         }
         buffer.flip();
         assertThat(buffer.remainingBits()).isEqualTo(16);
         assertThat(buffer.getByte()).isEqualTo((byte)9);//00000100
         assertThat(buffer.getByte()).isEqualTo((byte)156);//11001110
+    }
+
+    @Test
+    public void test_put_int_len14_in_two_byte() {
+        //1001 10011100
+        int data = 2460;
+        BitBuffer buffer = BitBuffer.allocate(16);
+        buffer.put(data, 14);
+        assertThat(buffer.remainingBits()).isEqualTo(2);
+        buffer.flip();
+        assertThat(buffer.remainingBits()).isEqualTo(14);
+        //00100110 011100
+        assertThat(buffer.getByte()).isEqualTo((byte)38);//00100110
+        assertThat(buffer.getByte(6)).isEqualTo((byte)28);//011100
+
+        //11101001 10011100
+        data = 59804;
+        buffer = BitBuffer.allocate(16);
+        buffer.put(data, 14);
+        assertThat(buffer.remainingBits()).isEqualTo(2);
+        buffer.flip();
+        assertThat(buffer.remainingBits()).isEqualTo(14);
+        //10100110 011100
+        assertThat(buffer.getByte()).isEqualTo((byte)166);//10100110
+        assertThat(buffer.getByte(6)).isEqualTo((byte)28);//011100
+
+        //11110000 11110000 11101001 10011100
+        data = 0xf0f0e99c;
+        buffer = BitBuffer.allocate(16);
+        buffer.put(data, 14);
+        assertThat(buffer.remainingBits()).isEqualTo(2);
+        buffer.flip();
+        assertThat(buffer.remainingBits()).isEqualTo(14);
+        //10100110 011100
+        assertThat(buffer.getByte()).isEqualTo((byte)166);//10100110
+        assertThat(buffer.getByte(6)).isEqualTo((byte)28);//011100
+    }
+
+
+    @Test
+    public void test_put_short_len14_in_two_byte() {
+        //1001 10011100
+        short data = 2460;
+        BitBuffer buffer = BitBuffer.allocate(16);
+        buffer.put(data, 14);
+        assertThat(buffer.remainingBits()).isEqualTo(2);
+        buffer.flip();
+        assertThat(buffer.remainingBits()).isEqualTo(14);
+        //00100110 011100
+        assertThat(buffer.getByte()).isEqualTo((byte)38);//00100110
+        assertThat(buffer.getByte(6)).isEqualTo((byte)28);//011100
+
+        //11101001 10011100
+        data = (short)0xe99c;
+        buffer = BitBuffer.allocate(16);
+        buffer.put(data, 14);
+        assertThat(buffer.remainingBits()).isEqualTo(2);
+        buffer.flip();
+        assertThat(buffer.remainingBits()).isEqualTo(14);
+        //10100110 011100
+        assertThat(buffer.getByte()).isEqualTo((byte)166);//10100110
+        assertThat(buffer.getByte(6)).isEqualTo((byte)28);//011100
     }
 
 }
