@@ -280,8 +280,8 @@ public class BitBuffer {
     }
 
     /**
-     * Put fixed bit count into buffer. Because of put one byte,
-     * so bitLength can't larger than 8 or be negative.
+     * Put fixed bit count into buffer, from byte right part bits.
+     * Because of put one byte, so bitLength can't larger than 8 or be negative.
      * <p/>
      * Example:<br/>
      * data=6 (110)
@@ -347,9 +347,9 @@ public class BitBuffer {
     }
 
     /**
-     * Put fixed bit count into buffer, start put position is putBitPosition.
-     * Because of put one byte, so bitLength can't larger than 8 or be negative.
-     * This will not change position.
+     * Put fixed bit count into buffer, start put position in buffer is putBitPosition,
+     * from byte right part bits. Because of put one byte, so bitLength can't larger
+     * than 8 or be negative. This will not change position.
      * <p/>
      * Example:<br/>
      * If origin buffer is "10000001",
@@ -411,7 +411,7 @@ public class BitBuffer {
     }
 
     /**
-     * Put bits with byte array into buffer.
+     * Put bits with byte array into buffer, from bytes left part bits.
      *
      * @return Current buffer.
      * @throws BufferOverflowException have not enough bit to get.
@@ -421,7 +421,7 @@ public class BitBuffer {
     }
 
     /**
-     * Put fixed bit count into buffer, from byte left(11111111 11000000 count 10
+     * Put fixed bit count into buffer, from bytes left(11111111 11000000 count 10
      * will use 11111111 11, not 11110000 00). Because of put bytes,
      * so bitLength can't larger than 8*data.length or be negative.
      *
@@ -458,10 +458,10 @@ public class BitBuffer {
     }
 
     /**
-     * Put fixed bit count into buffer, from byte left(11111111 11000000 count 10
-     * will use 11111111 11, not 11110000 00), start put position is putBitPosition.
-     * Because of put bytes, so bitLength can't larger than 8*data.length or be negative.
-     * This will not change position.
+     * Put fixed bit count into buffer, from bytes left(11111111 11000000 count 10
+     * will use 11111111 11, not 11110000 00), start put position in buffer is
+     * putBitPosition. Because of put bytes, so bitLength can't larger than 8*data
+     * .length or be negative. This will not change position.
      *
      * @return Current buffer.
      * @throws IllegalArgumentException bitLength can't lager than 8 or be negative.
@@ -496,6 +496,42 @@ public class BitBuffer {
             byte bitsInLastByte = pickBitsFromLeftPartOfByte(data[fullUsedByteLength],
                     lastByteUsedBitLength);
             put(bitsInLastByte, putBitPosition, lastByteUsedBitLength);
+        }
+        return this;
+    }
+
+    /**
+     * Put fixed bit count into buffer, from bytes right part(11111111 11000000 count 10
+     * will use 11110000 00, not 11111111 11), start put position in buffer is
+     * putBitPosition. Because of put bytes, so bitLength can't larger than 8*data
+     * .length or be negative. This will not change position.
+     *
+     * @return Current buffer.
+     * @throws IllegalArgumentException bitLength can't lager than 8 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
+     */
+    public BitBuffer putRightPart(byte[] data, int bitLength) {
+        if(bitLength > data.length << 3) {
+            throw new IllegalArgumentException(
+                    "Bytes have " + (data.length << 3) + " bits, " +
+                            "bitLength must not larger than that.");
+        }
+        if(bitLength < 0) {
+            throw new IllegalArgumentException("Length can't be negative.");
+        }
+        if(bitLength == 0) {
+            return this;
+        }
+        if(buffer.remaining() == 0 || remainingBits() < bitLength) {
+            throw new BufferOverflowException();
+        }
+        int notFullUsedByteLength = data.length - (bitLength >>> 3);
+        int firstByteUsedBitLength = bitLength & 0x07;
+        if(firstByteUsedBitLength != 0) {
+            put(data[notFullUsedByteLength - 1], firstByteUsedBitLength);
+        }
+        for(int i = notFullUsedByteLength; i < data.length; i++) {
+            put(data[i]);
         }
         return this;
     }

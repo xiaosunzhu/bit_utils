@@ -9,3 +9,7 @@ Create base simple bit utils include BitBuffer and Bin StringHelper.
 Add array/getUsedArray, put int/short functions to BitBuffer.
 Fix when split one byte first bit is 1 may get wrong result.
 Fix when put byte length not 8 and should split into 2 bytes, may get wrong result.
+
+
+1.1-SNAPSHOT
+Add putRightPart function.

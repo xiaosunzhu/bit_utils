@@ -226,6 +226,31 @@ public class TestBitBufferPut {
     }
 
     @Test
+    public void test_put_bit_bytes_from_bytes_right_part() {
+        //00001001 10011100
+        byte[] data = { 9, (byte)156 };
+        BitBuffer buffer = BitBuffer.allocate(16);
+        buffer.putRightPart(data, 8);//10011100
+        buffer.flip();
+        assertThat(buffer.getByte()).isEqualTo((byte)156);
+
+        //00001001 10011100
+        data = new byte[]{ 9, (byte)156 };
+        buffer = BitBuffer.allocate(16);
+        buffer.putRightPart(data, 6);//011100
+        buffer.flip();
+        assertThat(buffer.getByte(6)).isEqualTo((byte)28);
+
+        //00001001 10011100
+        data = new byte[]{ 9, (byte)156 };
+        buffer = BitBuffer.allocate(16);
+        buffer.putRightPart(data, 10);//01 10011100
+        buffer.flip();
+        assertThat(buffer.getByte()).isEqualTo((byte)103);//01100111
+        assertThat(buffer.getByte(2)).isEqualTo((byte)0);//00
+    }
+
+    @Test
     public void test_put_int_len14_in_two_byte() {
         //1001 10011100
         int data = 2460;
