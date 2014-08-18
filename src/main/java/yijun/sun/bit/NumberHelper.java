@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package yijun.sun;
+package yijun.sun.bit;
 
 
 /**

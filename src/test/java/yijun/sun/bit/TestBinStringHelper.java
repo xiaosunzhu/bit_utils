@@ -14,10 +14,11 @@
  *  limitations under the License.
  */
 
-package yijun.sun;
+package yijun.sun.bit;
 
 
 import org.junit.Test;
+import yijun.sun.bit.BinStringHelper;
 
 import static org.fest.assertions.api.Assertions.assertThat;
 
