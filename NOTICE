@@ -13,3 +13,8 @@ Fix when put byte length not 8 and should split into 2 bytes, may get wrong resu
 
 1.1-SNAPSHOT
 Add putRightPart function.
+
+
+1.1
+Move private some pick bits functions to PickBitsHelper and change public.
+BitBuffer add getInt/getLong functions.

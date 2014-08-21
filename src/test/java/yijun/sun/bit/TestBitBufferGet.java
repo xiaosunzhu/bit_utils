@@ -18,7 +18,6 @@ package yijun.sun.bit;
 
 
 import org.junit.Test;
-import yijun.sun.bit.BitBuffer;
 
 import static org.fest.assertions.api.Assertions.assertThat;
 

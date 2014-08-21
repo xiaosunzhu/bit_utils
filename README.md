@@ -56,11 +56,18 @@ Functions like ByteBuffer.
 More usage in doc and test.
 
 -------------------------------------------------------
+### PickBitsHelper ###
+A simple tool to pick some bits from number.
+
+Example: pickBitsPartOfByte(data, 2, 5);
+If data is 10010011(binary), will pick bits 01001(binary), return byte is 0x09.
+
+-------------------------------------------------------
 ### BinStringHelper ###
 A simple tool, provide some static function to change number(byte,byte[],int,short,long) to a binary string.
 Usually used to print for debug.
 
-Example: 
+Example:
 
 - byte 210 -> "11010010 "
 - int -1 -> "11111111 11111111 11111111 11111111 "

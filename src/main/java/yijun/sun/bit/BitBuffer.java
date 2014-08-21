@@ -135,11 +135,13 @@ public class BitBuffer {
         if(endIndex > 8) {// combine current and next bytes
             secondPartBitLength = endIndex - 8;
             endIndex = 8;
-            secondPart = pickBitFromByte(buffer.get(currentBytePosition + 1), 0,
-                    secondPartBitLength);
+            secondPart = PickBitsHelper
+                    .pickBitsFromByte(buffer.get(currentBytePosition + 1), 0,
+                            secondPartBitLength);
         }
-        byte bitData = pickBitFromByte(buffer.get(currentBytePosition), positionInByte,
-                endIndex);
+        byte bitData = PickBitsHelper
+                .pickBitsFromByte(buffer.get(currentBytePosition), positionInByte,
+                        endIndex);
         if(secondPart != null) {
             bitData = (byte)((bitData << secondPartBitLength) | secondPart);
         }
@@ -150,6 +152,58 @@ public class BitBuffer {
             positionInByte = endIndex;
         }
         return bitData;
+    }
+
+    /**
+     * Get fixed count bits from beginning into one int. So length can't lager than 32.
+     *
+     * @throws IllegalArgumentException bitLength can't lager than 32 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
+     */
+    public int getInt(int bitLength) {
+        if(bitLength > (32)) {
+            throw new IllegalArgumentException(
+                    "One int have 32 bit, bitLength must not larger than 32.");
+        }
+        if(bitLength < 0) {
+            throw new IllegalArgumentException("Length can't be negative.");
+        }
+        if(bitLength == 0) {
+            return 0;
+        }
+        if(remainingBits() < bitLength) {
+            throw new BufferOverflowException();
+        }
+        byte[] bytes = getBytes(bitLength);
+        byte[] intBytes = new byte[4];
+        System.arraycopy(bytes, 0, intBytes, 4 - bytes.length, bytes.length);
+        return NumberHelper.toInt(intBytes);
+    }
+
+    /**
+     * Get fixed count bits from beginning into one int. So length can't lager than 64.
+     *
+     * @throws IllegalArgumentException bitLength can't lager than 64 or be negative.
+     * @throws BufferOverflowException  have not enough bit to get.
+     */
+    public long getLong(int bitLength) {
+        if(bitLength > (64)) {
+            throw new IllegalArgumentException(
+                    "One int have 64 bit, bitLength must not larger than 64.");
+        }
+        if(bitLength < 0) {
+            throw new IllegalArgumentException("Length can't be negative.");
+        }
+        if(bitLength == 0) {
+            return 0;
+        }
+        if(remainingBits() < bitLength) {
+            throw new BufferOverflowException();
+        }
+        byte[] bytes = getBytes(bitLength);
+        byte[] longBytes = new byte[8];
+        System.arraycopy(bytes, 0, longBytes, 8 - bytes.length, bytes.length);
+        return NumberHelper.toLong(longBytes);
     }
 
     /**
@@ -185,9 +239,11 @@ public class BitBuffer {
             secondPartBitLength = endIndex - 8;
             endIndex = 8;
             secondPart =
-                    pickBitFromByte(buffer.get(startByte + 1), 0, secondPartBitLength);
+                    PickBitsHelper.pickBitsFromByte(buffer.get(startByte + 1), 0,
+                            secondPartBitLength);
         }
-        byte bitData = pickBitFromByte(buffer.get(startByte), positionInByte, endIndex);
+        byte bitData = PickBitsHelper
+                .pickBitsFromByte(buffer.get(startByte), positionInByte, endIndex);
         if(secondPart != null) {
             bitData = (byte)((bitData << secondPartBitLength) | secondPart);
         }
@@ -264,11 +320,6 @@ public class BitBuffer {
         return bytes;
     }
 
-    private static byte pickBitFromByte(byte fromByte, int startBit, int endBit) {
-        int rightMove = 8 + startBit - endBit;
-        return (byte)((((fromByte << startBit) & 0xff) >>> rightMove));
-    }
-
     /**
      * Put one byte into buffer.
      *
@@ -317,15 +368,18 @@ public class BitBuffer {
         Byte secondPartBits = null;
         int secondPartBitLength = (positionInByte + bitLength) - 8;
         if(secondPartBitLength > 0) {
-            secondPartBits = pickBitsFromRightPartOfByte(data, secondPartBitLength);
+            secondPartBits = PickBitsHelper
+                    .pickBitsFromRightPartOfByte(data, secondPartBitLength);
             firstPartBitLength = 8 - positionInByte;
-            firstPartBits = pickBitsPartOfByte(data, 8 - bitLength, firstPartBitLength);
+            firstPartBits = PickBitsHelper
+                    .pickBitsPartOfByte(data, 8 - bitLength, firstPartBitLength);
         } else {
-            firstPartBits = pickBitsFromRightPartOfByte(data, bitLength);
+            firstPartBits = PickBitsHelper.pickBitsFromRightPartOfByte(data, bitLength);
         }
         int currentBytePosition = buffer.position();
         byte currentByte = buffer.get(currentBytePosition);
-        int fillZeroCover = ~(getCoverToPickBitsInByteRight(firstPartBitLength) <<
+        int fillZeroCover = ~(
+                PickBitsHelper.getCoverToPickBitsInByteRight(firstPartBitLength) <<
                 (8 - positionInByte - firstPartBitLength));
         currentByte = (byte)((currentByte & fillZeroCover) |
                 (firstPartBits << (8 - positionInByte - firstPartBitLength)));
@@ -335,7 +389,7 @@ public class BitBuffer {
         if(secondPartBits != null) {
             int nextBytePosition = currentBytePosition + 1;
             byte nextByte = buffer.get(nextBytePosition);
-            fillZeroCover = ~(getCoverToPickBitsInByteRight(secondPartBits) <<
+            fillZeroCover = ~(PickBitsHelper.getCoverToPickBitsInByteRight(secondPartBits) <<
                     (8 - secondPartBitLength));
             nextByte = (byte)((nextByte & fillZeroCover) |
                     (secondPartBits << (8 - secondPartBitLength)));
@@ -384,15 +438,18 @@ public class BitBuffer {
         Byte secondPartBits = null;
         int secondPartBitLength = (positionInByte + bitLength) - 8;
         if(secondPartBitLength > 0) {
-            secondPartBits = pickBitsFromRightPartOfByte(data, secondPartBitLength);
+            secondPartBits = PickBitsHelper
+                    .pickBitsFromRightPartOfByte(data, secondPartBitLength);
             firstPartBitLength = 8 - positionInByte;
-            firstPartBits = pickBitsPartOfByte(data, 8 - bitLength, firstPartBitLength);
+            firstPartBits = PickBitsHelper
+                    .pickBitsPartOfByte(data, 8 - bitLength, firstPartBitLength);
         } else {
-            firstPartBits = pickBitsFromRightPartOfByte(data, bitLength);
+            firstPartBits = PickBitsHelper.pickBitsFromRightPartOfByte(data, bitLength);
         }
 
         byte currentByte = buffer.get(currentBytePosition);
-        int fillZeroCover = ~(getCoverToPickBitsInByteRight(firstPartBitLength) <<
+        int fillZeroCover = ~(
+                PickBitsHelper.getCoverToPickBitsInByteRight(firstPartBitLength) <<
                 (8 - positionInByte - firstPartBitLength));
         currentByte = (byte)((currentByte & fillZeroCover) |
                 (firstPartBits << (8 - positionInByte - firstPartBitLength)));
@@ -401,7 +458,7 @@ public class BitBuffer {
         if(secondPartBits != null) {
             int nextBytePosition = currentBytePosition + 1;
             byte nextByte = buffer.get(nextBytePosition);
-            fillZeroCover = ~(getCoverToPickBitsInByteRight(secondPartBits) <<
+            fillZeroCover = ~(PickBitsHelper.getCoverToPickBitsInByteRight(secondPartBits) <<
                     (8 - secondPartBitLength));
             nextByte = (byte)((nextByte & fillZeroCover) |
                     (secondPartBits << (8 - secondPartBitLength)));
@@ -450,8 +507,9 @@ public class BitBuffer {
             put(data[i]);
         }
         if(lastByteUsedBitLength > 0) {
-            byte bitsInLastByte = pickBitsFromLeftPartOfByte(data[fullUsedByteLength],
-                    lastByteUsedBitLength);
+            byte bitsInLastByte = PickBitsHelper
+                    .pickBitsFromLeftPartOfByte(data[fullUsedByteLength],
+                            lastByteUsedBitLength);
             put(bitsInLastByte, lastByteUsedBitLength);
         }
         return this;
@@ -493,8 +551,9 @@ public class BitBuffer {
             putBitPosition += 8;
         }
         if(lastByteUsedBitLength > 0) {
-            byte bitsInLastByte = pickBitsFromLeftPartOfByte(data[fullUsedByteLength],
-                    lastByteUsedBitLength);
+            byte bitsInLastByte = PickBitsHelper
+                    .pickBitsFromLeftPartOfByte(data[fullUsedByteLength],
+                            lastByteUsedBitLength);
             put(bitsInLastByte, putBitPosition, lastByteUsedBitLength);
         }
         return this;
@@ -582,7 +641,7 @@ public class BitBuffer {
         } else {
             allBytes = Arrays.copyOfRange(allBytes, 0, byteCount + 1);
             allBytes[allBytes.length - 1] = (byte)(allBytes[allBytes.length - 1] &
-                    getCoverToPickBitsInByteLeft(bitsInLastByte));
+                    PickBitsHelper.getCoverToPickBitsInByteLeft(bitsInLastByte));
         }
         return allBytes;
     }
@@ -602,7 +661,7 @@ public class BitBuffer {
         }
         byte[] usedArray = Arrays.copyOfRange(buffer.array(), 0, bytePosition + 1);
         usedArray[usedArray.length - 1] = (byte)(usedArray[usedArray.length - 1] &
-                getCoverToPickBitsInByteLeft(positionInByte));
+                PickBitsHelper.getCoverToPickBitsInByteLeft(positionInByte));
         return usedArray;
     }
 
@@ -610,29 +669,6 @@ public class BitBuffer {
         int bytePosition = fromBitPosition >>> 3;
         int remainingBytes = buffer.limit() - bytePosition;
         return (remainingBytes << 3) - (fromBitPosition & 0x07) - voidBitsInLastByte;
-    }
-
-    private byte pickBitsFromRightPartOfByte(byte data, int bitLength) {
-        return (byte)(data & getCoverToPickBitsInByteRight(bitLength));
-    }
-
-    private byte pickBitsFromLeftPartOfByte(byte data, int bitLength) {
-        return (byte)((data & getCoverToPickBitsInByteLeft(bitLength) &
-                0xff) >>> (8 - bitLength));
-    }
-
-    private byte pickBitsPartOfByte(byte data, int fromBit, int bitLength) {
-        byte cover = getCoverToPickBitsInByteLeft(bitLength);
-        cover = (byte)((cover & 0xff) >>> fromBit);
-        return (byte)((data & cover & 0xff) >>> (8 - bitLength - fromBit));
-    }
-
-    private byte getCoverToPickBitsInByteRight(int bitLength) {
-        return (byte)~(0xff << bitLength);
-    }
-
-    private byte getCoverToPickBitsInByteLeft(int bitLength) {
-        return (byte)(~(0xff << bitLength) << (8 - bitLength));
     }
 
 }
