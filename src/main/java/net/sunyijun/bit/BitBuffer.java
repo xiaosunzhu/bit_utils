@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package yijun.sun.bit;
+package net.sunyijun.bit;
 
 
 import java.nio.BufferOverflowException;
